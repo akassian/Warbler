@@ -5,7 +5,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, UserEditForm
-from models import db, connect_db, User, Message, Follows
+from models import db, connect_db, User, Message, Follows, Likes
 
 CURR_USER_KEY = "curr_user"
 
@@ -180,6 +180,18 @@ def users_followers(user_id):
     return render_template('users/followers.html', user=user)
 
 
+@app.route('/users/<int:user_id>/likes')
+def users_likes(user_id):
+    """Show list of likes of this user."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    user = User.query.get_or_404(user_id)
+    return render_template('users/likes.html', user=user)
+
+
 @app.route('/users/follow/<int:follow_id>', methods=['POST'])
 def add_follow(follow_id):
     """Add a follow for the currently-logged-in user."""
@@ -216,7 +228,7 @@ def profile():
 
     if not g.user:
         return redirect("/")
-    user = User.query.get_or_404(g.user.id)
+    user = g.user
     form = UserEditForm(obj=user)
 
     if form.validate_on_submit():
@@ -236,8 +248,11 @@ def profile():
             user.image_url = image_url
             user.header_image_url = header_image_url
             user.bio = bio
+            db.session.commit()
 
-        db.session.commit()
+        else:
+            flash('Wrong password')
+
         return redirect(f"/users/{g.user.id}")
 
     else:
@@ -308,6 +323,24 @@ def messages_destroy(message_id):
 
     return redirect(f"/users/{g.user.id}")
 
+@app.route('/messages/<int:message_id>/like', methods=["POST"])
+def messages_like(message_id):
+    """Like a message."""
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    like = Likes.query.filter_by(message_id=message_id).first()
+    if bool(like):
+        db.session.delete(like)
+
+    else:
+        like = Likes(user_id=g.user.id, message_id=message_id)
+        db.session.add(like)
+
+    db.session.commit()
+    return redirect(f"/users/{g.user.id}/likes")
+
 
 ##############################################################################
 # Homepage and error pages
@@ -323,30 +356,16 @@ def homepage():
     if g.user:
         user = User.query.get_or_404(g.user.id)
 
-        relevant_warbles = [s.id for s in user.following]
-        relevant_warbles.append(g.user.id)
+        relevant_warbles = [s.id for s in user.following] + [g.user.id]
 
         messages = (Message.query
                            .filter(Message.user_id.in_(relevant_warbles))
                            .order_by(Message.timestamp.desc())
                            .limit(100)
                            .all())
+        likes = [l.id for l in user.likes]
 
-        # messages = (Message
-        #             .query
-        #             .order_by(Message.timestamp.desc())
-        #             .limit(100)
-        #             .all())
-
-        # messages = (db.session
-        #             .query(Message.id, Message.text, Message.timestamp, Message.user_id, Message.user)
-        #             .join(Follows, Follows.user_being_followed_id == Message.user_id)
-        #             .filter(Follows.user_following_id == g.user.id)
-        #             .order_by(Message.timestamp.desc())
-        #             .limit(100)
-        #             .all())
-        
-        return render_template('home.html', messages=messages)
+        return render_template('home.html', messages=messages, likes=likes)
 
     else:
         return render_template('home-anon.html')
