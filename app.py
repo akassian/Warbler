@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
-from forms import UserAddForm, LoginForm, MessageForm
+from forms import UserAddForm, LoginForm, MessageForm, UserEditForm
 from models import db, connect_db, User, Message
 
 CURR_USER_KEY = "curr_user"
@@ -112,8 +112,11 @@ def login():
 @app.route('/logout')
 def logout():
     """Handle logout of user."""
+    do_logout()
+    flash('Logged out!')
+    return redirect('/')
 
-    # IMPLEMENT THIS
+
 
 
 ##############################################################################
@@ -211,7 +214,34 @@ def stop_following(follow_id):
 def profile():
     """Update profile for current user."""
 
-    # IMPLEMENT THIS
+    if not g.user:
+        return redirect("/")
+    user = User.query.get_or_404(g.user.id)
+    form = UserEditForm(obj=user)
+
+    if form.validate_on_submit():
+        password = form.password.data
+
+        auth = User.authenticate(user.username,
+                                 password)
+        if auth:
+            username = form.username.data
+            email = form.email.data
+            image_url = form.image_url.data
+            header_image_url = form.header_image_url.data
+            bio = form.bio.data
+
+            user.username = username
+            user.email = email
+            user.image_url = image_url
+            user.header_image_url = header_image_url
+            user.bio = bio
+
+        db.session.commit()
+        return redirect(f"/users/{g.user.id}")
+
+    else:
+        return render_template('users/edit.html', form=form)
 
 
 @app.route('/users/delete', methods=["POST"])
@@ -290,7 +320,6 @@ def homepage():
     - anon users: no messages
     - logged in: 100 most recent messages of followed_users
     """
-
     if g.user:
         messages = (Message
                     .query
