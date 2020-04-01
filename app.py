@@ -322,20 +322,30 @@ def homepage():
     """
     if g.user:
         user = User.query.get_or_404(g.user.id)
-        # messages = (user.following.messages
+
+        relevant_warbles = [s.id for s in user.following]
+        relevant_warbles.append(g.user.id)
+
+        messages = (Message.query
+                           .filter(Message.user_id.in_(relevant_warbles))
+                           .order_by(Message.timestamp.desc())
+                           .limit(100)
+                           .all())
+
+        # messages = (Message
         #             .query
         #             .order_by(Message.timestamp.desc())
         #             .limit(100)
         #             .all())
 
-        messages = (db.session
-                    .query(Message.id, Message.text, Message.timestamp, Message.user_id, Message.user)
-                    .join(Follows, Follows.user_being_followed_id == Message.user_id)
-                    .filter(Follows.user_following_id == g.user.id)
-                    .order_by(Message.timestamp.desc())
-                    .limit(100)
-                    .all())
-
+        # messages = (db.session
+        #             .query(Message.id, Message.text, Message.timestamp, Message.user_id, Message.user)
+        #             .join(Follows, Follows.user_being_followed_id == Message.user_id)
+        #             .filter(Follows.user_following_id == g.user.id)
+        #             .order_by(Message.timestamp.desc())
+        #             .limit(100)
+        #             .all())
+        
         return render_template('home.html', messages=messages)
 
     else:
