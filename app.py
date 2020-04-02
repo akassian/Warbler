@@ -363,7 +363,7 @@ def homepage():
                            .order_by(Message.timestamp.desc())
                            .limit(100)
                            .all())
-        likes = [l.id for l in user.likes]
+        likes = {l.id for l in user.likes}
 
         return render_template('home.html', messages=messages, likes=likes)
 
