@@ -69,19 +69,12 @@ class UserModelTestCase(TestCase):
     def test_user_model(self):
         """Does basic model work?"""
 
-        # db.session.add(u)
-        # db.session.commit()
-
         # User should have no messages & no followers
         self.assertEqual(len(self.u.messages), 0)
         self.assertEqual(len(self.u.followers), 0)
 
     def test_following_checks(self):
         "does checking if someone follows us work?"
-
-        # db.session.add(u)
-        # db.session.add(u2)
-        # db.session.commit()
 
         self.u.following.append(self.u2)
 

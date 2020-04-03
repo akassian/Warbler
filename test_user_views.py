@@ -45,7 +45,8 @@ class UserViewTests(TestCase):
         db.drop_all()
         db.create_all()
 
-        pw_hash = bcrypt.generate_password_hash('HASHED_PASSWORD').decode('utf-8')
+        # With lowered (minimum) work factor!
+        pw_hash = bcrypt.generate_password_hash('HASHED_PASSWORD', 4).decode('utf-8')
 
         u = User(
             email="test@test.com",
@@ -107,7 +108,7 @@ class UserViewTests(TestCase):
             html = resp.get_data(as_text=True)
             self.assertEqual(resp.status, '200 OK')
             self.assertIn('<p>@testuser</p>', html)
-        
+
     def test_logout(self):
         "does logging out work?"
 
@@ -217,23 +218,115 @@ class UserViewTests(TestCase):
             self.assertEqual(resp.status, '200 OK')
             self.assertIn('<div class="alert alert-danger">Access unauthorized.</div>', html)
 
-        # start with response codes, then HTML
 
-        # /signup (GET, POST) DONE
-        # /login (GET, POST) DONE 
-        # /logout DONE
+    def test_user_follow_route(self):
+        """
+        Does the follow/follow_id route successfully follow?
+        """
 
-        # /users DONE
-        # /users/<user_id> DONE
-        # /users/<user_id>/following DONE
-        # /users/<user_id>/followers DONE
-        # /users/<user_id>/likes
+        with app.test_client() as client:
+            # Login
+            client.post('/login', data={
+                'username': 'testuser',
+                'password': 'HASHED_PASSWORD'}, follow_redirects=True)
 
-        # ~~~ DO IN TEST_MESSAGES_VIEWS.PY ~~~
-        # /users/follow/<follow_id> (POST)
-        # /users/stop-following/<follow_id> (POST)
-        # /users/profile (GET, POST)
-        # /users/delete (POST)
+            # Follow user with id=2 (testuser2)
+            resp = client.post('/users/follow/2', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status, '200 OK')
+            self.assertIn('@testuser2', html)
+
+        # Should not be able to when logged out
+        with app.test_client() as client:
+            resp = client.post('/users/follow/2', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status, '200 OK')
+            self.assertIn('Access unauthorized.', html)
 
 
-        
+    def test_user_stop_follow_route(self):
+        """
+        Does the stop-following/follow_id route successfully unfollow?
+        """
+
+        with app.test_client() as client:
+            # Login
+            client.post('/login', data={
+                'username': 'testuser',
+                'password': 'HASHED_PASSWORD'}, follow_redirects=True)
+
+            # Follow user with id=2 (testuser2)
+            client.post('/users/follow/2', follow_redirects=True)
+            # Unfollow user with id=2 (testuser2)
+            resp = client.post('/users/stop-following/2', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status, '200 OK')
+            self.assertNotIn('@testuser2', html)
+
+        # Should not be able to when logged out
+        with app.test_client() as client:
+            resp = client.post('/users/stop-following/2', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status, '200 OK')
+            self.assertIn('Access unauthorized.', html)
+
+
+    def test_user_edit_profile(self):
+        """
+        Does users/profile bring you to edit profile when logged in?
+        Also, does editing profile work?
+        """
+        with app.test_client() as client:
+            # Login
+            client.post('/login', data={
+                    'username': 'testuser',
+                    'password': 'HASHED_PASSWORD'}, follow_redirects=True)
+
+            resp = client.get('/users/profile', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status, '200 OK')
+            self.assertIn('Edit Your Profile.', html)
+
+            resp = client.post('/users/profile', data={
+                'username': 'testuser3',
+                'email': 'test3@test3.com',
+                'password': 'HASHED_PASSWORD'}, follow_redirects=True)
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status, '200 OK')
+            self.assertIn('testuser3', html)
+
+        # Should not be able to when logged out
+        with app.test_client() as client:
+            resp = client.post('/users/profile', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status, '200 OK')
+            self.assertIn('What\'s Happening?', html)
+
+
+    def test_user_delete(self):
+        """
+        Does deleting a user worked when logged in?
+        """
+
+        with app.test_client() as client:
+            # Login
+            client.post('/login', data={
+                    'username': 'testuser',
+                    'password': 'HASHED_PASSWORD'}, follow_redirects=True)
+            resp = client.post('/users/delete', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status, '200 OK')
+            self.assertIn('Join Warbler today.', html)
+
+            stillInDB = bool(User.query.filter_by(username='testuser').one_or_none())
+
+            self.assertFalse(stillInDB)
+            resp = client.get('/users/1', follow_redirects=True)
+            self.assertEqual(resp.status, '404 NOT FOUND')
+
+        # Should not be able to when logged out
+        with app.test_client() as client:
+            resp = client.post('/users/delete', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status, '200 OK')
+            self.assertIn('Access unauthorized.', html)

@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, UserEditForm
 from models import db, connect_db, User, Message, Follows, Likes
-
+from jinja2.exceptions import UndefinedError
 CURR_USER_KEY = "curr_user"
 
 app = Flask(__name__)
@@ -304,9 +304,12 @@ def messages_add():
 @app.route('/messages/<int:message_id>', methods=["GET"])
 def messages_show(message_id):
     """Show a message."""
-
-    msg = Message.query.get(message_id)
-    return render_template('messages/show.html', message=msg)
+    try:
+        msg = Message.query.get(message_id)
+        return render_template('messages/show.html', message=msg)
+    except UndefinedError:
+        flash("Message does not exist", 'danger')
+        return redirect('/')
 
 
 @app.route('/messages/<int:message_id>/delete', methods=["POST"])
@@ -318,6 +321,11 @@ def messages_destroy(message_id):
         return redirect("/")
 
     msg = Message.query.get(message_id)
+
+    if g.user.id != msg.user.id:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
     db.session.delete(msg)
     db.session.commit()
 
