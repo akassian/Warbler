@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, render_template, request, flash, redirect, session, g
+from flask import Flask, render_template, request, flash, redirect, session, g, jsonify
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
@@ -23,6 +23,19 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
 toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
+
+
+def serialize_message(message):
+    """Serialize a message SQLAlchemy obj to dictionary."""
+
+    return {
+        "id": message.id,
+        "text": message.text,
+        "user_id": message.user.id,
+        "user_username": message.user.username,
+        "timestamp": message.timestamp.strftime("%d %B %Y"),
+        "user_image_url": message.user.image_url
+    }
 
 
 ##############################################################################
@@ -289,16 +302,28 @@ def messages_add():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    form = MessageForm()
-
-    if form.validate_on_submit():
-        msg = Message(text=form.text.data)
+    response = request.json['text']
+    if (response):
+        msg = Message(text=response)
         g.user.messages.append(msg)
         db.session.commit()
+        print("\n\n\n\n MSG IS:", msg)
+        return jsonify(serialize_message(msg))
 
-        return redirect(f"/users/{g.user.id}")
+    return 'Fail'
 
-    return render_template('messages/new.html', form=form)
+    # Non Further Study Implementation (WTForms + Flask)
+
+    # form = MessageForm()
+
+    # if form.validate_on_submit():
+    #     msg = Message(text=form.text.data)
+    #     g.user.messages.append(msg)
+    #     db.session.commit()
+
+    #     return redirect(f"/users/{g.user.id}")
+
+    # return render_template('messages/new.html', form=form)
 
 
 @app.route('/messages/<int:message_id>', methods=["GET"])

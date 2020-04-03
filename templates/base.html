@@ -1,68 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Warbler</title>
 
-<head>
-  <meta charset="UTF-8">
-  <title>Warbler</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/bootstrap/dist/css/bootstrap.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.3.1/css/all.css"
+    />
+    <link rel="stylesheet" href="/static/stylesheets/style.css" />
+    <link rel="shortcut icon" href="/static/favicon.ico" />
+  </head>
 
-  <link rel="stylesheet"
-        href="https://unpkg.com/bootstrap/dist/css/bootstrap.css">
-  <link rel="stylesheet"
-        href="https://use.fontawesome.com/releases/v5.3.1/css/all.css">
-  <link rel="stylesheet" href="/static/stylesheets/style.css">
-  <link rel="shortcut icon" href="/static/favicon.ico">
-</head>
-
-<body class="{% block body_class %}{% endblock %}">
-<nav class="navbar navbar-expand">
-  <div class="container-fluid">
-    <div class="navbar-header">
-      <a href="/" class="navbar-brand">
-        <img src="/static/images/warbler-logo.png" alt="logo">
-        <span>Warbler</span>
-      </a>
+  <body class="{% block body_class %}{% endblock %}">
+    <!-- MODAL -->
+    <div
+      class="modal fade"
+      id="exampleModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="exampleModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Warble</h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="row justify-content-center">
+              <div class="col-md-10">
+                <textarea
+                  name="text"
+                  id="new-warble-text"
+                  rows="3"
+                  class="form-control"
+                  placeholder="What's happening?"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              class="btn btn-outline-success btn-block"
+              id="new-warble-submit"
+            >
+              Add my message!
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-    <ul class="nav navbar-nav navbar-right">
-      {% if request.endpoint != None %}
-      <li>
-        <form class="navbar-form navbar-right" action="/users">
-          <input name="q" class="form-control" placeholder="Search Warbler" id="search">
-          <button class="btn btn-default">
-            <span class="fa fa-search"></span>
-          </button>
-        </form>
-      </li>
-      {% endif %}
-      {% if not g.user %}
-      <li><a href="/signup">Sign up</a></li>
-      <li><a href="/login">Log in</a></li>
-      {% else %}
-      <li>
-        <a href="/users/{{ g.user.id }}">
-          <img src="{{ g.user.image_url }}" alt="{{ g.user.username }}">
-        </a>
-      </li>
-      <li><a href="/messages/new">New Message</a></li>
-      <li><a href="/logout">Log out</a></li>
-      {% endif %}
-    </ul>
-  </div>
-</nav>
-<div class="container">
-  {% for category, message in get_flashed_messages(with_categories=True) %}
-  <div class="alert alert-{{ category }}">{{ message }}</div>
-  {% endfor %}
+    <!-- END OF MODAL -->
+    <nav class="navbar navbar-expand">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a href="/" class="navbar-brand">
+            <img src="/static/images/warbler-logo.png" alt="logo" />
+            <span>Warbler</span>
+          </a>
+        </div>
+        <ul class="nav navbar-nav navbar-right">
+          {% if request.endpoint != None %}
+          <li>
+            <form class="navbar-form navbar-right" action="/users">
+              <input
+                name="q"
+                class="form-control"
+                placeholder="Search Warbler"
+                id="search"
+              />
+              <button class="btn btn-default">
+                <span class="fa fa-search"></span>
+              </button>
+            </form>
+          </li>
+          {% endif %} {% if not g.user %}
+          <li><a href="/signup">Sign up</a></li>
+          <li><a href="/login">Log in</a></li>
+          {% else %}
+          <li>
+            <a href="/users/{{ g.user.id }}">
+              <img src="{{ g.user.image_url }}" alt="{{ g.user.username }}" />
+            </a>
+          </li>
+          <li>
+            <a
+              style="cursor: pointer"
+              id="new-warble"
+              data-toggle="modal"
+              data-target="#exampleModal"
+              >New Message</a
+            >
+          </li>
+          <li><a href="/logout">Log out</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </nav>
+    <div class="container">
+      {% for category, message in get_flashed_messages(with_categories=True) %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %} {% block content %} {% endblock %}
+    </div>
 
-  {% block content %}
-  {% endblock %}
+    <script src="https://unpkg.com/jquery"></script>
+    <script src="https://unpkg.com/popper"></script>
+    <script src="https://unpkg.com/bootstrap"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 
-</div>
-
-<script src="https://unpkg.com/jquery"></script>
-<script src="https://unpkg.com/popper"></script>
-<script src="https://unpkg.com/bootstrap"></script>
-<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-
-<script src="/static/script.js"></script>
-</body>
+    <script src="/static/script.js"></script>
+  </body>
 </html>

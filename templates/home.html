@@ -60,12 +60,11 @@
           <p>{{ msg.text }}</p>
         </div>
         {% if g.user.id != msg.user_id %}
-        <form
-          method=""
-          action=""
-          class="messages-like"
-        >
-          <button class="btn btn-sm {{'btn-primary' if msg.id in likes else 'btn-secondary'}} msg" id="{{msg.id}}">
+        <form method="" action="" class="messages-like">
+          <button
+            class="btn btn-sm {{'btn-primary' if msg.id in likes else 'btn-secondary'}} msg"
+            id="{{msg.id}}"
+          >
             <i class="fa fa-thumbs-up"></i>
           </button>
         </form>
