@@ -48,7 +48,7 @@
     <ul class="list-group" id="messages">
       {% for msg in messages %}
       <li class="list-group-item">
-        <a href="/messages/{{ msg.id  }}" class="message-link" />
+        <!-- <a href="/messages/{{ msg.id  }}" class="message-link" /> -->
         <a href="/users/{{ msg.user.id }}">
           <img src="{{ msg.user.image_url }}" alt="" class="timeline-image" />
         </a>
@@ -61,16 +61,11 @@
         </div>
         {% if g.user.id != msg.user_id %}
         <form
-          method="POST"
-          action="/messages/{{ msg.id }}/like"
+          method=""
+          action=""
           class="messages-like"
         >
-          <button
-            class="
-                btn
-                btn-sm
-                {{'btn-primary' if msg.id in likes else 'btn-secondary'}}"
-          >
+          <button class="btn btn-sm {{'btn-primary' if msg.id in likes else 'btn-secondary'}} msg" id="{{msg.id}}">
             <i class="fa fa-thumbs-up"></i>
           </button>
         </form>

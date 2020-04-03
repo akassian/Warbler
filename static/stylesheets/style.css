@@ -20,6 +20,10 @@ body.error-404 {
   cursor: pointer;
 }
 
+i {
+  pointer-events: none;
+}
+
 /* ======================= Nav */
 
 .navbar {

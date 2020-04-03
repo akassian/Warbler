@@ -23,15 +23,17 @@
       </div>
       {% if g.user.id != like.user_id %}
       <form
-        method="POST"
-        action="/messages/{{ like.id }}/like"
+        method=""
+        action=""
         class="messages-like"
       >
         <button
           class="
               btn
               btn-sm
-              {{'btn-primary'}}"
+              {{'btn-primary'}}
+              msg"
+          id="{{like.id}}"
         >
           <i class="fa fa-thumbs-up"></i>
         </button>
